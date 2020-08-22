@@ -310,7 +310,7 @@ func main() {
 	}
 
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
 		user,
 		password,
 		host,
@@ -323,6 +323,10 @@ func main() {
 		log.Fatalf("failed to connect to DB: %s.", err.Error())
 	}
 	defer dbx.Close()
+
+	dbx.SetMaxOpenConns(10)
+	dbx.SetMaxIdleConns(10)
+	dbx.SetConnMaxLifetime(time.Minute * 2)
 
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	log.Print("Waiting for DB...")
