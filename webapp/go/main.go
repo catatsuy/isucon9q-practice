@@ -328,7 +328,7 @@ func main() {
 	}
 	defer dbx.Close()
 
-	dbx.SetMaxOpenConns(200)
+	dbx.SetMaxOpenConns(100)
 	dbx.SetMaxIdleConns(200)
 	dbx.SetConnMaxLifetime(time.Minute * 2)
 
