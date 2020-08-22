@@ -422,16 +422,43 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 	return user, http.StatusOK, ""
 }
 
+var (
+	mtxUserSimple   sync.Mutex
+	userSimpleCache = make(map[int64]*UserSimple)
+)
+
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
+	mtxUserSimple.Lock()
+	defer mtxUserSimple.Unlock()
+	u, ok := userSimpleCache[userID]
+	if ok {
+		return *u, nil
+	}
 	user := User{}
-	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+	err = sqlx.Get(q, &user, "SELECT `account_name`, `num_sell_items` FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
-	userSimple.ID = user.ID
+	userSimple.ID = userID
 	userSimple.AccountName = user.AccountName
 	userSimple.NumSellItems = user.NumSellItems
+	userSimpleCache[userID] = &userSimple
 	return userSimple, err
+}
+
+func incUserSellItems(userID int64, numSellItems int) {
+	mtxUserSimple.Lock()
+	defer mtxUserSimple.Unlock()
+	u, ok := userSimpleCache[userID]
+	if ok {
+		u.NumSellItems = numSellItems
+	}
+}
+
+func clearSimpleUserCache() {
+	mtxUserSimple.Lock()
+	userSimpleCache = make(map[int64]*UserSimple)
+	mtxUserSimple.Unlock()
 }
 
 func getCategoryByID(categoryID int) (category Category) {
@@ -527,6 +554,8 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	for _, c := range categories {
 		CategoryCache[c.ID] = c
 	}
+
+	clearSimpleUserCache()
 
 	res := resInitialize{
 		// キャンペーン実施時には還元率の設定を返す。詳しくはマニュアルを参照のこと。
@@ -2099,6 +2128,7 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
 	}
+	incUserSellItems(seller.ID, seller.NumSellItems+1)
 	tx.Commit()
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
