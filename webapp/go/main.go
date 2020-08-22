@@ -435,11 +435,11 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 		return *u, nil
 	}
 	user := User{}
-	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+	err = sqlx.Get(q, &user, "SELECT `account_name`, `num_sell_items` FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
-	userSimple.ID = user.ID
+	userSimple.ID = userID
 	userSimple.AccountName = user.AccountName
 	userSimple.NumSellItems = user.NumSellItems
 	userSimpleCache[userID] = &userSimple
