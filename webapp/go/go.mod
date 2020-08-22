@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/goccy/go-json v0.1.9
 	github.com/gorilla/sessions v1.2.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/najeira/measure v0.0.0-20181003032124-22a5dc927668
