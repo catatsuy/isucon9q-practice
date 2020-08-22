@@ -64,6 +64,9 @@ var (
 	templates *template.Template
 	dbx       *sqlx.DB
 	store     sessions.Store
+
+	// bcrypt の並列性スロットリング.
+	chBcryptMutex = make(chan bool, 1)
 )
 
 type Config struct {
@@ -2224,7 +2227,9 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	chBcryptMutex <- true
 	err = bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(password))
+	<-chBcryptMutex
 	if err == bcrypt.ErrMismatchedHashAndPassword {
 		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
 		return
@@ -2269,7 +2274,9 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	chBcryptMutex <- true
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
+	<-chBcryptMutex
 	if err != nil {
 		log.Print(err)
 
