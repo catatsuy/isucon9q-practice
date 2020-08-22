@@ -319,6 +319,18 @@ func main() {
 	}
 	defer dbx.Close()
 
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
+	log.Print("Waiting for DB...")
+	for {
+		_, err := dbx.Exec("SELECT 42")
+		if err == nil {
+			break
+		}
+		log.Print(err)
+		time.Sleep(time.Second * 2)
+	}
+	log.Print("DB Ready!")
+
 	mux := goji.NewMux()
 
 	// API
