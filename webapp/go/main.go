@@ -3,6 +3,7 @@ package main
 import (
 	crand "crypto/rand"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -16,9 +17,10 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/goccy/go-json"
+	// "github.com/goccy/go-json"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
+	measure "github.com/najeira/measure"
 	goji "goji.io"
 	"goji.io/pat"
 	"golang.org/x/crypto/bcrypt"
@@ -337,6 +339,8 @@ func main() {
 
 	mux := goji.NewMux()
 
+	// debug
+	mux.HandleFunc(pat.Get("/debug/measure"), measure.HandleStats)
 	// API
 	mux.HandleFunc(pat.Post("/initialize"), postInitialize)
 	mux.HandleFunc(pat.Get("/new_items.json"), getNewItems)
@@ -519,6 +523,10 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func getNewItems(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"getNewItems",
+	).Stop()
+
 	query := r.URL.Query()
 	itemIDStr := query.Get("item_id")
 	var itemID int64
@@ -615,6 +623,10 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"getNewCategoryItems",
+	).Stop()
+
 	rootCategoryIDStr := pat.Param(r, "root_category_id")
 	rootCategoryID, err := strconv.Atoi(rootCategoryIDStr)
 	if err != nil || rootCategoryID <= 0 {
@@ -746,6 +758,10 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserItems(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"getUserItems",
+	).Stop()
+
 	userIDStr := pat.Param(r, "user_id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil || userID <= 0 {
@@ -854,6 +870,9 @@ func getUserItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTransactions(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"getTransactions",
+	).Stop()
 
 	user, errCode, errMsg := getUser(r)
 	if errMsg != "" {
@@ -1033,6 +1052,10 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"getItem",
+	).Stop()
+
 	itemIDStr := pat.Param(r, "item_id")
 	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
 	if err != nil || itemID <= 0 {
@@ -1131,6 +1154,10 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func postItemEdit(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"postItemEdit",
+	).Stop()
+
 	rie := reqItemEdit{}
 	err := json.NewDecoder(r.Body).Decode(&rie)
 	if err != nil {
@@ -1226,6 +1253,9 @@ func postItemEdit(w http.ResponseWriter, r *http.Request) {
 }
 
 func getQRCode(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"getQRCode",
+	).Stop()
 	transactionEvidenceIDStr := pat.Param(r, "transaction_evidence_id")
 	transactionEvidenceID, err := strconv.ParseInt(transactionEvidenceIDStr, 10, 64)
 	if err != nil || transactionEvidenceID <= 0 {
@@ -1282,6 +1312,10 @@ func getQRCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func postBuy(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"postBuy",
+	).Stop()
+
 	rb := reqBuy{}
 
 	err := json.NewDecoder(r.Body).Decode(&rb)
@@ -1486,6 +1520,10 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 }
 
 func postShip(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"postShip",
+	).Stop()
+
 	reqps := reqPostShip{}
 
 	err := json.NewDecoder(r.Body).Decode(&reqps)
@@ -1617,6 +1655,9 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 }
 
 func postShipDone(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"postShipDone",
+	).Stop()
 	reqpsd := reqPostShipDone{}
 
 	err := json.NewDecoder(r.Body).Decode(&reqpsd)
@@ -1763,6 +1804,9 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 }
 
 func postComplete(w http.ResponseWriter, r *http.Request) {
+	defer measure.Start(
+		"postComplete",
+	).Stop()
 	reqpc := reqPostComplete{}
 
 	err := json.NewDecoder(r.Body).Decode(&reqpc)
